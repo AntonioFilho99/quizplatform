@@ -121,6 +121,7 @@ class UserResponse(models.Model):
     resposta = models.ForeignKey(Answer, null=True, blank=True, on_delete=models.PROTECT)
     correta = models.BooleanField(default=False)
     ordem = models.PositiveSmallIntegerField(default=0)
+    explicacao_ia = models.TextField(blank=True, default="", help_text="Explicação gerada pela IA (guardada para não repetir a chamada).")
 
     class Meta:
         ordering = ["ordem"]

@@ -12,21 +12,38 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 
 import os
 from pathlib import Path
+from urllib.parse import parse_qs, unquote, urlparse
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+from django.core.exceptions import ImproperlyConfigured
+from dotenv import load_dotenv
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Variáveis de ambiente: lidas do arquivo .env (não vai ao Git) ou do painel do servidor (Vercel).
+load_dotenv(BASE_DIR / ".env")
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-$z%7pwj@ff(2-9&9a3z#2i7ed@42dirbua8i0g+yh9_78bj&ga'
+def env(nome, padrao=""):
+    return os.environ.get(nome, padrao)
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-ALLOWED_HOSTS = []
+def env_lista(nome, padrao=""):
+    return [v.strip() for v in env(nome, padrao).split(",") if v.strip()]
+
+
+# Em produção defina DEBUG=0 e SECRET_KEY no painel do servidor.
+DEBUG = env("DEBUG", "1").lower() in ("1", "true", "yes")
+
+SECRET_KEY = env("SECRET_KEY")
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured("Defina a variável de ambiente SECRET_KEY quando DEBUG estiver desligado.")
+    SECRET_KEY = "django-insecure-apenas-para-desenvolvimento-local"
+
+ALLOWED_HOSTS = env_lista("ALLOWED_HOSTS", "localhost,127.0.0.1")
+CSRF_TRUSTED_ORIGINS = env_lista("CSRF_TRUSTED_ORIGINS")
+# Endereços do front-end React autorizados a chamar a API (Vite roda em 5173).
+CORS_ALLOWED_ORIGINS = env_lista("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
 
 
 # Application definition
@@ -38,12 +55,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework.authtoken',
+    'corsheaders',
     'contas',
     'quiz',
+    'api',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -75,18 +97,23 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
-if os.environ.get("POSTGRES_DB"):
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ["POSTGRES_DB"],
-            "USER": os.environ.get("POSTGRES_USER", "postgres"),
-            "PASSWORD": os.environ.get("POSTGRES_PASSWORD", ""),
-            "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
-            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
-        }
+def banco_da_url(url):
+    """Converte DATABASE_URL (ex.: string de conexão do Neon) na configuração do Django."""
+    u = urlparse(url)
+    return {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": u.path.lstrip("/"),
+        "USER": unquote(u.username or ""),
+        "PASSWORD": unquote(u.password or ""),
+        "HOST": u.hostname or "",
+        "PORT": u.port or "",
+        "OPTIONS": {k: v[0] for k, v in parse_qs(u.query).items()},  # ex.: sslmode=require
     }
-else:
+
+
+if env("DATABASE_URL"):
+    DATABASES = {"default": banco_da_url(env("DATABASE_URL"))}
+else:  # desenvolvimento local
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
@@ -146,7 +173,24 @@ LOGIN_REDIRECT_URL = "dashboard"
 LOGOUT_REDIRECT_URL = "login"
 
 # Configurações do quiz
-PERGUNTAS_POR_RODADA = 5
+PERGUNTAS_POR_RODADA = int(env("PERGUNTAS_POR_RODADA", "10"))
 MIN_RESPOSTAS_ASSUNTO = 2       # mínimo de respostas num assunto para classificá-lo
 LIMITE_DIFICULDADE = 50         # % abaixo do qual o assunto é dificuldade
 LIMITE_DOMINIO = 80             # % a partir do qual o assunto é ponto forte
+
+# ----- API REST (Django REST Framework) -----
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 10,
+    "DEFAULT_THROTTLE_RATES": {"auth": "30/min", "ia": "30/hour"},
+}
+
+# ----- IA (chamada feita só no servidor; a chave nunca vai para o React) -----
+AI_API_KEY = env("AI_API_KEY")
+AI_API_URL = env("AI_API_URL", "https://api.anthropic.com/v1/messages")
+AI_MODEL = env("AI_MODEL", "claude-haiku-5-5")

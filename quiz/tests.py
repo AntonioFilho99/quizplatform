@@ -14,7 +14,7 @@ class FluxoQuizTest(TestCase):
         self.client.login(username="ana", password="senha12345")
 
     def jogar(self, categoria, acertar):
-        r = self.client.post(reverse("iniciar", args=[categoria.pk]), follow=False)
+        r = self.client.post(reverse("iniciar", args=[categoria.pk]), {"quantidade": 5}, follow=False)
         tentativa = QuizAttempt.objects.latest("id")
         self.assertRedirects(r, reverse("responder", args=[tentativa.pk]))
         while True:

@@ -1,14 +1,12 @@
-import random
-
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db import transaction
-from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .analise import dificuldades_recorrentes, finalizar_tentativa, ids_para_revisar
-from .models import Answer, Category, Question, Quiz, QuizAttempt, Subject, UserResponse
+from .servicos import (RodadaVazia, alternativas_embaralhadas, contagem_revisao_por_categoria,
+                       iniciar_rodada, pergunta_atual, registrar_resposta)
+from .models import Answer, Category, Question, QuizAttempt, Subject, UserResponse
 
 
 @login_required
@@ -32,11 +30,7 @@ def dashboard(request):
 @login_required
 def categorias(request):
     cats = list(Category.objects.prefetch_related("assuntos"))
-    pendentes = (
-        Question.objects.filter(pk__in=ids_para_revisar(request.user), ativa=True)
-        .values("assunto__categoria").annotate(n=Count("id"))
-    )
-    contagem = {r["assunto__categoria"]: r["n"] for r in pendentes}
+    contagem = contagem_revisao_por_categoria(request.user)
     for c in cats:
         c.revisar = contagem.get(c.pk, 0)
     return render(request, "quiz/categorias.html", {
@@ -60,30 +54,14 @@ def iniciar(request, categoria_id):
     qtd = request.POST.get("quantidade", "")
     quantidade = min(max(int(qtd), 1), 50) if qtd.isdigit() else None
 
-    base = Question.objects.filter(assunto__categoria=categoria, ativa=True, alternativas__correta=True)
-    if assunto:
-        base = base.filter(assunto=assunto)
-    if modo == "revisao":
-        base = base.filter(pk__in=ids_para_revisar(request.user))
-    ids = list(base.distinct().values_list("id", flat=True))
-    if not ids:
+    try:
+        tentativa = iniciar_rodada(request.user, categoria, assunto, modo, quantidade)
+    except RodadaVazia:
         if modo == "revisao":
             messages.info(request, "Nada para revisar aqui: você não tem erros pendentes. 🎉")
         else:
             messages.error(request, "Não há perguntas cadastradas para essa seleção.")
         return redirect("categorias")
-
-    quiz = Quiz.objects.filter(categoria=categoria).first() or Quiz.objects.create(
-        categoria=categoria, titulo=f"Quiz de {categoria.nome}", num_perguntas=settings.PERGUNTAS_POR_RODADA
-    )
-    sorteadas = random.sample(ids, min(quantidade or quiz.num_perguntas, len(ids)))
-    with transaction.atomic():
-        tentativa = QuizAttempt.objects.create(
-            usuario=request.user, quiz=quiz, total=len(sorteadas), assunto=assunto, modo=modo
-        )
-        UserResponse.objects.bulk_create(
-            [UserResponse(tentativa=tentativa, pergunta_id=q, ordem=i) for i, q in enumerate(sorteadas)]
-        )
     return redirect("responder", tentativa_id=tentativa.pk)
 
 
@@ -93,7 +71,7 @@ def responder(request, tentativa_id):
     if tentativa.finalizada:
         return redirect("resultado", tentativa_id=tentativa.pk)
 
-    atual = tentativa.respostas.filter(resposta__isnull=True).select_related("pergunta").first()
+    atual = pergunta_atual(tentativa)
     if atual is None:
         finalizar_tentativa(tentativa)
         return redirect("resultado", tentativa_id=tentativa.pk)
@@ -103,13 +81,10 @@ def responder(request, tentativa_id):
         if alt is None:
             messages.error(request, "Selecione uma alternativa.")
         else:
-            atual.resposta = alt
-            atual.correta = alt.correta
-            atual.save()
+            registrar_resposta(atual, alt)
             return redirect("feedback", tentativa_id=tentativa.pk, resposta_id=atual.pk)
 
-    alternativas = list(atual.pergunta.alternativas.all())
-    random.Random(atual.pk).shuffle(alternativas)  # ordem estável por pergunta
+    alternativas = alternativas_embaralhadas(atual)
     respondidas = tentativa.respostas.filter(resposta__isnull=False).count()
     return render(request, "quiz/pergunta.html", {
         "tentativa": tentativa,
