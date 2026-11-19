@@ -1,0 +1,31 @@
+{% extends "base.html" %}{% block title %}Pergunta {{ numero }}{% endblock %}
+{% block content %}
+<div class="quiz">
+  <div class="quiz-head">
+    <span class="badge">{{ tentativa.rotulo }}</span>
+    <span class="mut">Pergunta <strong>{{ numero }}</strong> de {{ total }}</span>
+  </div>
+  <div class="bar"><i style="width:{{ progresso }}%"></i></div>
+  <div class="card question">
+    <span class="chip">{{ item.pergunta.assunto.nome }}</span>
+    <h2>{{ item.pergunta.texto }}</h2>
+    <form method="post">{% csrf_token %}
+      {% for a in alternativas %}
+        <label class="opt"><input type="radio" name="alternativa" value="{{ a.pk }}" required>
+          <span class="letter">{% cycle 'A' 'B' 'C' 'D' 'E' 'F' %}</span><span>{{ a.texto }}</span></label>
+      {% endfor %}
+      <button class="btn block" style="margin-top:1rem">{% if numero == total %}Finalizar ✓{% else %}Responder →{% endif %}</button>
+      <p class="hint">Dica: use as teclas A, B, C, D para selecionar.</p>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('keydown',function(e){
+  var i='abcdef'.indexOf(e.key.toLowerCase());
+  var r=document.querySelectorAll('input[name=alternativa]');
+  if(e.key.length===1&&i>-1&&r[i]){r[i].checked=true;r[i].focus();}
+});
+</script>
+{% endblock %}

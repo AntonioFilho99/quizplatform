@@ -1,0 +1,22 @@
+{% extends "base.html" %}{% block title %}Quizzes{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Escolha uma categoria</h1><p class="mut">Cada rodada sorteia perguntas da categoria selecionada.</p></div></div>
+<div class="grid">
+{% for c in categorias %}
+  <div class="card hover cat-card">
+    <div class="cat-icon">{{ c.icone }}</div>
+    <h3>{{ c.nome }}</h3>
+    <div class="chips">{% for a in c.assuntos.all %}<span class="chip">{{ a.nome }}</span>{% endfor %}</div>
+    <div class="count">{{ c.total_perguntas }} pergunta{{ c.total_perguntas|pluralize }}</div>
+    <form method="post" action="{% url 'iniciar' c.pk %}" class="cat-form">{% csrf_token %}
+      <label>Assunto<select name="assunto"><option value="">Todos os assuntos</option>{% for a in c.assuntos.all %}<option value="{{ a.pk }}">{{ a.nome }}</option>{% endfor %}</select></label>
+      <label>Quantidade de perguntas<select name="quantidade">{% for n in opcoes_qtd %}<option value="{{ n }}" {% if n == qtd_padrao %}selected{% endif %}>{{ n }}</option>{% endfor %}</select></label>
+      <div class="cat-btns">
+        <button class="btn block" name="modo" value="normal">Iniciar quiz</button>
+        {% if c.revisar %}<button class="btn sec block" name="modo" value="revisao">🔁 Revisar erros ({{ c.revisar }})</button>{% endif %}
+      </div>
+    </form>
+  </div>
+{% empty %}<p class="mut">Nenhuma categoria cadastrada. Importe perguntas ou use o admin.</p>{% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}{% block title %}Pergunta {{ numero }}{% endblock %}
+{% block content %}
+<div class="quiz">
+  <div class="quiz-head">
+    <span class="badge">{{ tentativa.rotulo }}</span>
+    <span class="mut">Pergunta <strong>{{ numero }}</strong> de {{ total }} · <span class="ok">✔ {{ acertos }}</span> · <span class="err">✘ {{ erros }}</span></span>
+  </div>
+  <div class="bar"><i style="width:{{ progresso }}%"></i></div>
+  <div class="card question">
+    <span class="chip">{{ item.pergunta.assunto.nome }}</span>
+    <h2>{{ item.pergunta.texto }}</h2>
+    {% if item.correta %}
+      <div class="banner ok"><span class="banner-icon">✔</span><div><strong>Você acertou!</strong>Muito bem, continue assim.</div></div>
+      <div class="opt static good"><span class="letter">✔</span><span>{{ item.resposta.texto }}</span></div>
+    {% else %}
+      <div class="banner err"><span class="banner-icon">✘</span><div><strong>Você errou</strong>Veja a resposta correta abaixo.</div></div>
+      <div class="opt static bad"><span class="letter">✘</span><span>Sua resposta: {{ item.resposta.texto }}</span></div>
+      <div class="opt static good"><span class="letter">✔</span><span>Correta: {{ correta.texto }}</span></div>
+    {% endif %}
+    {% if item.pergunta.explicacao %}<div class="explain">💡 {{ item.pergunta.explicacao }}</div>{% endif %}
+    <a class="btn block" style="margin-top:1.2rem" href="{% url 'responder' tentativa.pk %}">{% if ultima %}Ver resultado final 🏁{% else %}Próxima pergunta →{% endif %}</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}{% block title %}Resultado{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Resultado</h1><p class="mut">{{ tentativa.rotulo }} · {{ tentativa.finalizado_em|date:"d/m/Y H:i" }}</p></div></div>
+
+<div class="card hero">
+  <div class="ring" style="--p:{{ tentativa.percentual|stringformat:'f' }};--ring-color:{% if tentativa.percentual >= 80 %}var(--ok){% elif tentativa.percentual < 50 %}var(--err){% else %}var(--warn){% endif %}">
+    <div><span>{{ tentativa.percentual }}%<small>aproveitamento</small></span></div>
+  </div>
+  <div class="nums">
+    <div><div class="stat-label">Acertos</div><div class="stat ok">{{ tentativa.acertos }}</div></div>
+    <div><div class="stat-label">Erros</div><div class="stat err">{{ tentativa.erros }}</div></div>
+    <div><div class="stat-label">Perguntas</div><div class="stat">{{ tentativa.total }}</div></div>
+    {% if analise.variacao is not None %}
+    <div><div class="stat-label">vs. rodada anterior</div>
+      <div class="stat {% if analise.variacao >= 0 %}ok{% else %}err{% endif %}">{% if analise.variacao >= 0 %}▲{% else %}▼{% endif %} {{ analise.variacao|stringformat:"+.1f" }} pts</div></div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card diag">
+  <h3>🩺 Diagnóstico</h3>
+  <p>{{ analise.diagnostico }}</p>
+  <p><strong>📚 Recomendação:</strong> {{ analise.recomendacoes }}</p>
+</div>
+
+<div class="card">
+  <h3>Desempenho por assunto</h3>
+  {% for d in analise.por_assunto %}
+    <div class="row"><span><strong>{{ d.assunto }}</strong></span><span class="mut">{{ d.acertos }} acerto{{ d.acertos|pluralize }} · {{ d.erros }} erro{{ d.erros|pluralize }} · <strong>{{ d.percentual }}%</strong></span></div>
+    <div class="bar {% if d.percentual >= 80 %}good{% elif d.percentual < 50 %}bad{% else %}mid{% endif %}"><i style="width:{{ d.percentual|stringformat:'f' }}%"></i></div>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <h3>Revisão das respostas</h3>
+  {% for r in respostas %}
+    <div class="review {% if r.correta %}ok{% else %}err{% endif %}">
+      <p><strong>{{ forloop.counter }}. {{ r.pergunta.texto }}</strong> <span class="chip">{{ r.pergunta.assunto.nome }}</span></p>
+      {% if r.correta %}<p class="ok">✔ {{ r.resposta.texto }}</p>
+      {% else %}<p class="err">✘ {{ r.resposta.texto }}</p><p class="ok">Correta: {{ r.texto_correto }}</p>{% endif %}
+      {% if r.pergunta.explicacao %}<p class="mut">💡 {{ r.pergunta.explicacao }}</p>{% endif %}
+    </div>
+  {% endfor %}
+</div>
+<div class="actions">
+  {% if tentativa.erros %}
+  <form method="post" action="{% url 'iniciar' tentativa.quiz.categoria_id %}">{% csrf_token %}
+    <input type="hidden" name="modo" value="revisao">{% if tentativa.assunto_id %}<input type="hidden" name="assunto" value="{{ tentativa.assunto_id }}">{% endif %}
+    <button class="btn">🔁 Revisar meus erros</button></form>
+  {% endif %}
+  <a class="btn sec" href="{% url 'categorias' %}">▶ Novo quiz</a><a class="btn sec" href="{% url 'historico' %}">Ver histórico</a>
+</div>
+{% endblock %}

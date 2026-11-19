@@ -1,0 +1,26 @@
+﻿categoria;assunto;pergunta;alt_a;alt_b;alt_c;alt_d;correta;explicacao
+Ciência de Dados;Estatística;Qual medida de tendência central é menos sensível a outliers?;Média;Mediana;Amplitude;Variância;B;A mediana depende da posição dos valores, não da magnitude dos extremos.
+Ciência de Dados;Estatística;O que o desvio padrão mede?;O valor mais frequente;A dispersão dos dados em torno da média;A soma dos valores;O número de observações;B;Quanto maior, mais espalhados estão os dados.
+Ciência de Dados;Estatística;Em uma distribuição normal, cerca de quantos % dos dados ficam a 1 desvio padrão da média?;50%;68%;95%;99,7%;B;Regra empírica 68-95-99,7.
+Ciência de Dados;Pandas;Qual método do Pandas mostra estatísticas resumidas de um DataFrame?;head();describe();shape;drop();B;`describe()` traz contagem, média, desvio, mínimo, quartis e máximo.
+Ciência de Dados;Pandas;Qual método do Pandas remove linhas com valores nulos?;fillna();dropna();isnull();drop_duplicates();B;`dropna()` descarta linhas (ou colunas) com NaN.
+Ciência de Dados;Pandas;Qual método do Pandas agrupa dados para aplicar agregações?;sort_values();groupby();rename();astype();B;`df.groupby('col').mean()`, por exemplo.
+Engenharia de Software;POO;Qual pilar da POO permite que uma classe reaproveite atributos e métodos de outra?;Encapsulamento;Herança;Polimorfismo;Abstração;B;A subclasse herda da superclasse.
+Engenharia de Software;POO;O que é encapsulamento?;Criar várias classes iguais;Esconder detalhes internos e expor uma interface controlada;Converter tipos de dados;Executar código em paralelo;B;Protege o estado interno do objeto.
+Engenharia de Software;POO;O que o polimorfismo permite?;Objetos diferentes responderem à mesma chamada de formas distintas;Ocultar atributos privados;Criar objetos sem classe;Evitar o uso de herança;A;Ex.: `falar()` diferente em Cachorro e Gato.
+Engenharia de Software;Padrões de projeto;Qual padrão garante uma única instância de uma classe?;Factory;Singleton;Observer;Decorator;B;Singleton restringe a criação a uma instância global.
+Engenharia de Software;Padrões de projeto;Qual padrão notifica vários objetos quando o estado de outro muda?;Observer;Singleton;Adapter;Builder;A;Observer define uma dependência um-para-muitos.
+Engenharia de Software;Padrões de projeto;Para que serve o padrão Factory Method?;Garantir instância única;Delegar a criação de objetos a um método ou subclasse;Notificar observadores;Adaptar interfaces incompatíveis;B;Desacopla o código cliente das classes concretas.
+Infraestrutura;Linux;Qual comando lista arquivos e diretórios no Linux?;cd;ls;pwd;rm;B;`ls` lista o conteúdo do diretório.
+Infraestrutura;Linux;Qual comando altera as permissões de um arquivo?;chown;chmod;chgrp;mv;B;`chmod 755 arquivo`, por exemplo.
+Infraestrutura;Linux;Qual comando mostra o diretório atual?;pwd;ls;whoami;cat;A;`pwd` = print working directory.
+Infraestrutura;Docker;O que é uma imagem Docker?;Um contêiner em execução;Um template somente leitura usado para criar contêineres;Um volume de dados;Uma rede virtual;B;Contêineres são instâncias criadas a partir de imagens.
+Infraestrutura;Docker;Qual comando lista os contêineres em execução?;docker images;docker ps;docker build;docker pull;B;`docker ps -a` mostra também os parados.
+Infraestrutura;Redes;Qual protocolo traduz nomes de domínio em endereços IP?;HTTP;DNS;DHCP;FTP;B;DNS = Domain Name System.
+Infraestrutura;Redes;Qual é a porta padrão do HTTPS?;80;443;22;21;B;80 é HTTP, 22 é SSH e 21 é FTP.
+Algoritmos;Complexidade;Qual a complexidade da busca binária em um vetor ordenado?;O(n);O(log n);O(n²);O(1);B;A cada passo o espaço de busca cai pela metade.
+Algoritmos;Complexidade;Qual a complexidade do bubble sort no pior caso?;O(n log n);O(n);O(n²);O(log n);C;São dois laços aninhados sobre os elementos.
+Algoritmos;Estruturas de dados;Qual estrutura segue a regra LIFO (último a entrar, primeiro a sair)?;Fila;Pilha;Lista ligada;Árvore;B;Pilha (stack): push e pop no topo.
+Algoritmos;Estruturas de dados;Qual estrutura segue a regra FIFO (primeiro a entrar, primeiro a sair)?;Fila;Pilha;Grafo;Heap;A;Fila (queue): enfileira no fim e remove do início.
+Algoritmos;Estruturas de dados;Qual o custo médio de busca em uma tabela hash?;O(1);O(n);O(log n);O(n²);A;Com boa função de hash, o acesso é em tempo constante.
+Algoritmos;Lógica;Quantas vezes o laço `for i in range(1, 6)` executa em Python?;4;5;6;1;B;`range(1, 6)` gera 1, 2, 3, 4 e 5.

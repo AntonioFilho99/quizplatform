@@ -1,0 +1,34 @@
+{% extends "base.html" %}{% block title %}Histórico{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Histórico</h1><p class="mut">Todas as suas rodadas concluídas.</p></div></div>
+<form method="get" class="card filter">
+  <div><label>Filtrar por categoria<select name="categoria"><option value="">Todas</option>
+  {% for c in categorias %}<option value="{{ c.pk }}" {% if c.pk|stringformat:"s" == categoria_id %}selected{% endif %}>{{ c.nome }}</option>{% endfor %}</select></label></div>
+  <button class="btn">Filtrar</button>
+</form>
+{% if grafico_valores %}<div class="card"><h3>Evolução</h3><canvas id="evolucao" height="100"></canvas></div>{% endif %}
+<div class="card table-wrap"><table>
+<thead><tr><th>Data</th><th>Quiz</th><th>Acertos</th><th>Erros</th><th>Aproveitamento</th><th></th></tr></thead><tbody>
+{% for t in tentativas %}
+<tr><td>{{ t.finalizado_em|date:"d/m/Y H:i" }}</td><td>{{ t.rotulo }}</td><td class="ok">{{ t.acertos }}</td><td class="err">{{ t.erros }}</td>
+<td><span class="badge {% if t.percentual >= 80 %}ok{% elif t.percentual < 50 %}err{% else %}warn{% endif %}">{{ t.percentual }}%</span></td>
+<td><a href="{% url 'resultado' t.pk %}">Detalhes →</a></td></tr>
+{% empty %}<tr><td colspan="6" class="mut">Nenhuma rodada concluída.</td></tr>{% endfor %}
+</tbody></table></div>
+{% if dificuldades %}<div class="card"><h3>⚠️ Dificuldades recorrentes</h3>
+{% for d in dificuldades %}
+  <div class="row"><span>{{ d.assunto }}</span><span class="mut">{{ d.acertos }}/{{ d.total }} · {{ d.percentual }}%</span></div>
+  <div class="bar {% if d.percentual >= 80 %}good{% elif d.percentual < 50 %}bad{% else %}mid{% endif %}"><i style="width:{{ d.percentual|stringformat:'f' }}%"></i></div>
+{% endfor %}</div>{% endif %}
+{% endblock %}
+{% block scripts %}{% if grafico_valores %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+var css=getComputedStyle(document.documentElement);
+Chart.defaults.color=css.getPropertyValue('--mut').trim();
+Chart.defaults.borderColor=css.getPropertyValue('--bd').trim();
+new Chart(document.getElementById('evolucao'),{type:'line',
+ data:{labels:{{ grafico_labels|safe }},datasets:[{label:'Aproveitamento (%)',data:{{ grafico_valores|safe }},
+  borderColor:css.getPropertyValue('--pri').trim(),backgroundColor:'rgba(91,91,240,.15)',fill:true,tension:.35,pointRadius:4}]},
+ options:{plugins:{legend:{display:false}},scales:{y:{min:0,max:100}}}});
+</script>{% endif %}{% endblock %}

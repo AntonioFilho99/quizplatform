@@ -1,0 +1,47 @@
+{% extends "base.html" %}{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Olá, {{ user.username }}! 👋</h1><p class="mut">Veja como está a sua evolução nos estudos.</p></div>
+  <a class="btn" href="{% url 'categorias' %}">▶ Novo quiz</a>
+</div>
+
+<div class="grid">
+  <div class="card stat-card"><div class="stat-icon">🎯</div><div><div class="stat-label">Rodadas concluídas</div><div class="stat">{{ total_rodadas }}</div></div></div>
+  <div class="card stat-card"><div class="stat-icon {% if media >= 80 %}ok{% elif media < 50 and total_rodadas %}err{% else %}warn{% endif %}">📈</div><div><div class="stat-label">Aproveitamento médio</div><div class="stat">{{ media }}%</div></div></div>
+  <div class="card stat-card"><div class="stat-icon warn">🔁</div><div><div class="stat-label">Perguntas para revisar</div><div class="stat">{{ revisar_total }}</div>{% if revisar_total %}<a href="{% url 'categorias' %}">Revisar agora →</a>{% endif %}</div></div>
+</div>
+
+{% if grafico_valores %}
+<div class="card"><h3>Evolução do aproveitamento</h3><canvas id="evolucao" height="100"></canvas></div>
+{% endif %}
+
+<div class="grid two">
+  <div class="card">
+    <h3>🕘 Últimas rodadas</h3>
+    {% for t in ultimas %}
+      <div class="row">
+        <a href="{% url 'resultado' t.pk %}"><strong>{{ t.rotulo }}</strong> <span class="mut">· {{ t.finalizado_em|date:"d/m H:i" }}</span></a>
+        <span class="badge {% if t.percentual >= 80 %}ok{% elif t.percentual < 50 %}err{% else %}warn{% endif %}">{{ t.percentual }}%</span>
+      </div>
+    {% empty %}<p class="mut">Nenhuma rodada ainda. Comece um quiz!</p>{% endfor %}
+  </div>
+  <div class="card">
+    <h3>⚠️ Dificuldades recorrentes</h3>
+    {% for d in dificuldades %}
+      <div class="row"><span>{{ d.assunto }}</span><span class="mut">{{ d.acertos }}/{{ d.total }} · {{ d.percentual }}%</span></div>
+      <div class="bar {% if d.percentual >= 80 %}good{% elif d.percentual < 50 %}bad{% else %}mid{% endif %}"><i style="width:{{ d.percentual|stringformat:'f' }}%"></i></div>
+    {% empty %}<p class="mut">Sem dados suficientes ainda.</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}{% if grafico_valores %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+var css=getComputedStyle(document.documentElement);
+Chart.defaults.color=css.getPropertyValue('--mut').trim();
+Chart.defaults.borderColor=css.getPropertyValue('--bd').trim();
+new Chart(document.getElementById('evolucao'),{type:'line',
+ data:{labels:{{ grafico_labels|safe }},datasets:[{label:'Aproveitamento (%)',data:{{ grafico_valores|safe }},
+  borderColor:css.getPropertyValue('--pri').trim(),backgroundColor:'rgba(91,91,240,.15)',fill:true,tension:.35,pointRadius:4}]},
+ options:{plugins:{legend:{display:false}},scales:{y:{min:0,max:100}}}});
+</script>{% endif %}{% endblock %}
